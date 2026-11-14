@@ -58,7 +58,7 @@
 #rsvp-form-root .rsvp-status{margin:10px 0 0;min-height:1.2em;text-align:center;font-style:italic}
 #rsvp-form-root .rsvp-status.is-error{color:var(--r-err)}
 #rsvp-form-root .rsvp-thanks{text-align:center;background:#fff;border:1px solid var(--r-line);border-radius:6px;padding:32px 20px}
-#rsvp-form-root .rsvp-thanks h3{font-family:var(--r-script);font-weight:400;font-size:2.2rem;margin:0 0 10px}
+#rsvp-form-root .rsvp-thanks h3{font-family:var(--r-script);font-style:italic;font-weight:400;font-size:clamp(1.35rem,6.2vw,1.9rem);white-space:nowrap;margin:0}
 #rsvp-form-root .rsvp-thanks p{margin:0 0 8px}
 #rsvp-form-root .rsvp-thanks[hidden],#rsvp-form-root .rsvp-form[hidden]{display:none}
 #rsvp-form-root .rsvp-hp input{font-size:16px}

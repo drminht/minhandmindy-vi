@@ -49,7 +49,7 @@
   }
 
   // ---------- build DOM ----------
-  var title = h('h2', { class: 'rsvp-title', id: 'rsvp-title', text: 'Quý khách có thể đến tham dự cùng chúng tôi được không?' });
+  var title = h('h2', { class: 'rsvp-title', id: 'rsvp-title', text: 'Để việc đón tiếp được chu đáo, Quý Khách vui lòng xác nhận tham dự trước ngày 30/11' });
   var btnYes = h('button', { type: 'button', class: 'rsvp-pill', 'aria-pressed': 'false', text: 'Có' });
   var btnNo = h('button', { type: 'button', class: 'rsvp-pill', 'aria-pressed': 'false', text: 'Không' });
   var choice = h('div', { class: 'rsvp-choice', role: 'group', 'aria-labelledby': 'rsvp-title' }, [btnYes, btnNo]);
@@ -259,17 +259,8 @@
 
   function success(p) {
     clearDraft();
-    var yes = p.attending === 'Yes';
-    var who = p.fullName;
     thanks.textContent = '';
-    thanks.appendChild(h('h3', { text: yes ? 'Hẹn gặp bạn tại tiệc!' : 'Chúng mình sẽ nhớ bạn lắm!' }));
-    thanks.appendChild(h('p', { text: yes
-      ? 'Cảm ơn ' + who + '. Chúng mình đã giữ ' + p.seats + ' chỗ cho bạn và rất vui vì bạn sẽ đến chung vui.'
-      : 'Cảm ơn ' + who + ' đã báo cho chúng mình. Mong sớm được gặp và chung vui cùng bạn.' }));
-    thanks.appendChild(h('p', { text: 'Thương mến, Minh & Mindy' }));
-    var again = h('button', { type: 'button', class: 'rsvp-link', text: 'Gửi một phản hồi khác' });
-    again.addEventListener('click', function () { resetAll(); title.scrollIntoView({ block: 'center' }); });
-    thanks.appendChild(again);
+    thanks.appendChild(h('h3', { text: 'Xin Chân Thành Cảm Ơn' }));
     form.hidden = true; choice.hidden = true; title.hidden = true; thanks.hidden = false;
     thanks.focus();
   }

@@ -4,7 +4,7 @@
   var root = document.getElementById('rsvp-form-root');
   if (!root) return;
 
-  var DRAFT_KEY = 'rsvp-draft-vi-v2';
+  var DRAFT_KEY = 'rsvp-draft-vi-v3';
   var PLACEHOLDER = 'PASTE_APPS_SCRIPT_URL_HERE';
   var EVENTS = [
     ['Intimate Ceremony', 'Intimate Ceremony'],
@@ -14,7 +14,7 @@
   // Reception-only invite: the event question is skipped and this value is sent instead.
   var FIXED_EVENT = (window.RSVP_CONFIG || {}).fixedEvent || '';
 
-  var state = { attending: '', seats: '', fullName: '', plusOneName: '', joiningFor: '', phone: '', vegetarian: '' };
+  var state = { attending: '', seats: '', fullName: '', plusOneName: '', joiningFor: '', vegetarian: '' };
   var submissionId = newId();
   var sending = false;
 
@@ -94,10 +94,6 @@
   var eventRow = collapse(eventFieldset);
 
   // dietary
-  var phoneIn = h('input', { type: 'tel', class: 'rsvp-input', id: 'rsvp-phone', name: 'phone', autocomplete: 'tel', inputmode: 'numeric', pattern: '[0-9 ]*', maxlength: '20', 'aria-describedby': 'rsvp-phone-err' });
-  var phoneErr = errEl('rsvp-phone-err');
-  var phoneRow = collapse(h('div', { class: 'rsvp-field' }, [
-    h('label', { class: 'rsvp-label', for: 'rsvp-phone', text: 'Số điện thoại liên hệ' }), phoneIn, phoneErr]));
 
   // note
   var vegRadios = [['Có', 'Có'], ['Không', 'Không']].map(function (v, i) {
@@ -105,7 +101,7 @@
     return { input: inp, el: h('label', { class: 'rsvp-radio', for: 'rsvp-veg-' + i }, [inp, h('span', { text: v[1] })]) };
   });
   var vegRow = collapse(h('fieldset', { class: 'rsvp-field' }, [
-    h('legend', { text: 'Quý khách có nhu cầu ăn chay không?' }),
+    h('legend', { text: 'Quý Khách có dùng chay hay không?' }),
     h('div', { class: 'rsvp-radios rsvp-radios-2' }, vegRadios.map(function (r) { return r.el; }))]));
 
   // honeypot
@@ -115,7 +111,7 @@
   var nameWrap = h('div', { class: 'rsvp-collapse-static' }, [nameField]);
   nameWrap.style.marginBottom = '22px';
 
-  var card = h('div', { class: 'rsvp-card', hidden: '' }, [seatsRow, nameWrap, plusRow, eventRow, phoneRow, vegRow, hp]);
+  var card = h('div', { class: 'rsvp-card', hidden: '' }, [seatsRow, nameWrap, plusRow, eventRow, vegRow, hp]);
 
   var submitBtn = h('button', { type: 'submit', class: 'rsvp-submit', text: 'Xác nhận' });
   var resetBtn = h('button', { type: 'button', class: 'rsvp-link', text: 'Làm lại' });
@@ -144,13 +140,11 @@
     card.hidden = !picked; actions.hidden = !picked;
     setHidden(seatsRow, !yes);
     setHidden(eventRow, !yes || !!FIXED_EVENT);
-    setHidden(phoneRow, !yes);
     setHidden(vegRow, !yes);
     setHidden(plusRow, !(yes && state.seats === '2'));
     seatBtns.forEach(function (b) { b.setAttribute('aria-checked', b.getAttribute('data-v') === state.seats); b.tabIndex = (state.seats ? b.getAttribute('data-v') === state.seats : b.getAttribute('data-v') === '1') ? 0 : -1; });
     radios.forEach(function (r) { r.input.checked = r.input.value === state.joiningFor; });
     nameIn.value = state.fullName; plusIn.value = state.plusOneName;
-    phoneIn.value = state.phone;
     vegRadios.forEach(function (r) { r.input.checked = r.input.value === state.vegetarian; });
   }
 
@@ -158,10 +152,7 @@
     errNode.textContent = msg || '';
     if (input) { if (msg) input.setAttribute('aria-invalid', 'true'); else input.removeAttribute('aria-invalid'); }
   }
-  // Phone: digits only (spaces allowed as separators), 8-15 digits.
-  function phoneDigitsOk(v) { var d = String(v || '').replace(/\s+/g, ''); return /^[0-9]{8,15}$/.test(d); }
   function clearErrors() {
-    setErr(phoneIn, phoneErr);
     setErr(nameIn, nameErr); setErr(plusIn, plusErr); setErr(null, seatsErr); setErr(null, eventErr);
     status.textContent = ''; status.classList.remove('is-error');
   }
@@ -190,13 +181,6 @@
   });
   nameIn.addEventListener('input', function () { state.fullName = nameIn.value; if (nameIn.value.trim()) setErr(nameIn, nameErr); saveDraft(); });
   plusIn.addEventListener('input', function () { state.plusOneName = plusIn.value; if (plusIn.value.trim()) setErr(plusIn, plusErr); saveDraft(); });
-  phoneIn.addEventListener('input', function () {
-    var clean = phoneIn.value.replace(/[^0-9 ]/g, '');
-    if (clean !== phoneIn.value) phoneIn.value = clean;
-    state.phone = clean;
-    if (phoneDigitsOk(clean)) setErr(phoneIn, phoneErr);
-    saveDraft();
-  });
   vegRadios.forEach(function (r) {
     r.input.addEventListener('change', function () { state.vegetarian = r.input.value; saveDraft(); });
   });
@@ -221,7 +205,6 @@
     if (yes && !state.seats) bad(seatBtns[0], seatsErr, 'Vui lòng chọn số chỗ cần giữ.', null);
     if (!state.fullName.trim()) bad(nameIn, nameErr, 'Cho chúng mình biết tên bạn nhé.', nameIn);
     if (yes && state.seats === '2' && !state.plusOneName.trim()) bad(plusIn, plusErr, 'Vui lòng nhập họ tên người đi cùng.', plusIn);
-    if (yes && state.phone.trim() && !phoneDigitsOk(state.phone)) bad(phoneIn, phoneErr, 'Số điện thoại chỉ gồm chữ số (8–15 số).', phoneIn);
     if (yes && !FIXED_EVENT && !state.joiningFor) bad(radios[0].input, eventErr, 'Vui lòng chọn phần bạn sẽ tham dự.', null);
     if (first) first.focus();
     return !first;
@@ -246,12 +229,7 @@
       fullName: state.fullName.trim(),
       plusOneName: yes && state.seats === '2' ? state.plusOneName.trim() : '',
       joiningFor: yes ? (FIXED_EVENT || state.joiningFor) : '',
-      phone: yes ? state.phone.trim() : '',
       vegetarian: yes ? state.vegetarian : '',
-      // The current Apps Script only knows the original columns, so also write the
-      // new answers into them: Dietary <- vegetarian, Note <- phone number.
-      dietary: yes && state.vegetarian ? 'Ăn chay: ' + state.vegetarian : '',
-      note: yes && state.phone.trim() ? 'SĐT: ' + state.phone.trim() : '',
       submissionId: submissionId,
       website: hpIn.value
     };

@@ -33,7 +33,8 @@
     if (!raw) return;
     try {
       var d = JSON.parse(raw);
-      Object.keys(state).forEach(function (k) { if (typeof d[k] === 'string') state[k] = d[k]; });
+      // Never restore the Có/Không answer: the form always opens with nothing selected.
+      Object.keys(state).forEach(function (k) { if (k !== 'attending' && typeof d[k] === 'string') state[k] = d[k]; });
     } catch (e) {}
   }
 

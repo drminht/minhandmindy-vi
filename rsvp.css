@@ -1,0 +1,74 @@
+/* RSVP form. Scoped under #rsvp-form-root. Uses site tokens with fallbacks. */
+#rsvp-form-root{
+  --r-ink:var(--ink,#4a4a4a);
+  --r-pink:var(--pink,#e58a96);
+  --r-pink-deep:var(--pink-deep,#c9606f);
+  --r-blush:var(--blush,#fff3f3);
+  --r-line:var(--line,#e6dede);
+  --r-err:#b3283c;
+  --r-serif:var(--font-serif,'Alegreya','Georgia',serif);
+  --r-script:var(--font-script,'Allura','Great Vibes','Brush Script MT',cursive);
+  max-width:620px;margin:0 auto;padding:0 16px;box-sizing:border-box;
+  color:var(--r-ink);font-family:var(--r-serif);font-size:18px;line-height:1.4;
+}
+#rsvp-form-root *,#rsvp-form-root *::before,#rsvp-form-root *::after{box-sizing:border-box}
+#rsvp-form-root .rsvp-title{font-family:var(--r-script);font-weight:400;font-size:clamp(2rem,9vw,2.8rem);text-align:center;margin:0 0 20px;line-height:1.15}
+#rsvp-form-root .rsvp-choice{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:22px}
+#rsvp-form-root .rsvp-pill{
+  flex:1 1 150px;min-height:48px;padding:8px 14px;line-height:1.2;border-radius:999px;cursor:pointer;
+  border:1.5px solid var(--r-pink);background:transparent;color:var(--r-ink);
+  font:italic 1.05rem var(--r-serif);transition:background .2s,color .2s,transform .1s}
+#rsvp-form-root .rsvp-pill:hover{background:var(--r-blush)}
+#rsvp-form-root .rsvp-pill:active{transform:scale(.98)}
+#rsvp-form-root .rsvp-pill[aria-pressed="true"]{background:var(--r-pink);color:var(--r-ink);font-weight:600}
+#rsvp-form-root :focus-visible{outline:3px solid var(--r-pink-deep);outline-offset:2px}
+#rsvp-form-root .rsvp-card{background:#fff;border:1px solid var(--r-line);border-radius:6px;padding:22px 18px;margin-bottom:20px}
+#rsvp-form-root .rsvp-card[hidden]{display:none}
+#rsvp-form-root .rsvp-field{margin:0 0 22px;padding:0;border:0;min-width:0}
+#rsvp-form-root .rsvp-field:last-child{margin-bottom:0}
+#rsvp-form-root .rsvp-label,#rsvp-form-root legend{display:block;padding:0;font-style:italic;font-size:1.05rem;margin-bottom:8px;color:var(--r-ink)}
+#rsvp-form-root .rsvp-opt{font-size:.85em;opacity:.7}
+/* collapsible rows */
+#rsvp-form-root .rsvp-collapse{display:grid;grid-template-rows:1fr;opacity:1;transition:grid-template-rows .35s ease,opacity .3s ease,margin .35s ease;margin-bottom:22px}
+#rsvp-form-root .rsvp-collapse>.rsvp-inner{overflow:hidden;min-height:0;padding:3px 3px 0;margin:-3px -3px 0}
+#rsvp-form-root .rsvp-collapse.is-hidden{grid-template-rows:0fr;opacity:0;margin-bottom:0;pointer-events:none}
+#rsvp-form-root .rsvp-collapse .rsvp-field{margin-bottom:0}
+@media (prefers-reduced-motion:reduce){#rsvp-form-root *{transition:none!important}}
+#rsvp-form-root .rsvp-seats{display:flex;gap:12px}
+#rsvp-form-root .rsvp-seat{width:48px;height:48px;border-radius:50%;border:1.5px solid var(--r-pink);background:#fff;color:var(--r-ink);font:1.1rem var(--r-serif);cursor:pointer;transition:background .2s,color .2s}
+#rsvp-form-root .rsvp-seat[aria-checked="true"]{background:var(--r-pink);color:var(--r-ink);font-weight:600}
+#rsvp-form-root .rsvp-input,#rsvp-form-root .rsvp-textarea{
+  width:100%;display:block;background:var(--r-blush);color:var(--r-ink);
+  border:0;border-bottom:1.5px solid var(--r-pink);border-radius:0;padding:12px;min-height:48px;
+  font:1rem/1.4 var(--r-serif);font-size:16px;-webkit-appearance:none;appearance:none}
+#rsvp-form-root .rsvp-textarea{min-height:96px;resize:vertical}
+#rsvp-form-root .rsvp-radios{display:grid;gap:8px}
+#rsvp-form-root .rsvp-radio{display:flex;align-items:center;gap:12px;min-height:48px;padding:8px 12px;background:var(--r-blush);cursor:pointer;border-left:3px solid transparent}
+#rsvp-form-root .rsvp-radio:has(input:checked){border-left-color:var(--r-pink);background:#ffe9ec}
+#rsvp-form-root .rsvp-radio input{width:22px;height:22px;margin:0;accent-color:var(--r-pink-deep);flex:none}
+#rsvp-form-root .rsvp-error{color:var(--r-err);font-style:italic;font-size:.95rem;margin:6px 0 0;min-height:0}
+#rsvp-form-root .rsvp-error:empty{display:none}
+#rsvp-form-root [aria-invalid="true"]{border-bottom-color:var(--r-err)}
+#rsvp-form-root .rsvp-hp{position:absolute!important;left:-9999px;width:1px;height:1px;overflow:hidden}
+#rsvp-form-root .rsvp-actions{text-align:center}
+#rsvp-form-root .rsvp-submit{min-width:200px;min-height:50px;padding:10px 32px;border:0;border-radius:999px;background:var(--r-pink);color:var(--r-ink);font:italic 1.15rem var(--r-serif);cursor:pointer;transition:background .2s,opacity .2s}
+#rsvp-form-root .rsvp-submit:hover{background:var(--r-pink-deep)}
+#rsvp-form-root .rsvp-submit[disabled]{opacity:.65;cursor:progress}
+#rsvp-form-root .rsvp-link{display:inline-block;background:none;border:0;padding:12px;margin-top:4px;min-height:44px;color:var(--r-ink);text-decoration:underline;font:italic .95rem var(--r-serif);cursor:pointer}
+#rsvp-form-root .rsvp-status{margin:10px 0 0;min-height:1.2em;text-align:center;font-style:italic}
+#rsvp-form-root .rsvp-status.is-error{color:var(--r-err)}
+#rsvp-form-root .rsvp-thanks{text-align:center;background:#fff;border:1px solid var(--r-line);border-radius:6px;padding:32px 20px}
+#rsvp-form-root .rsvp-thanks h3{font-family:var(--r-script);font-weight:400;font-size:2.2rem;margin:0 0 10px}
+#rsvp-form-root .rsvp-thanks p{margin:0 0 8px}
+#rsvp-form-root .rsvp-thanks[hidden],#rsvp-form-root .rsvp-form[hidden]{display:none}
+#rsvp-form-root .rsvp-hp input{font-size:16px}
+
+/* On the full site the RSVP art already carries this heading; keep it for screen readers only. */
+.rsvp-art + #rsvp-form-root .rsvp-title,
+body:not(.rsvp-test) #rsvp-form-root .rsvp-title {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* Vegetarian Có / Không: two side-by-side boxes */
+#rsvp-form-root .rsvp-radios-2{grid-template-columns:1fr 1fr}

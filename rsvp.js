@@ -1,0 +1,301 @@
+/* RSVP form for Minh & Mindy. Mounts into #rsvp-form-root. */
+(function () {
+  'use strict';
+  var root = document.getElementById('rsvp-form-root');
+  if (!root) return;
+
+  var DRAFT_KEY = 'rsvp-draft-vi-v2';
+  var PLACEHOLDER = 'PASTE_APPS_SCRIPT_URL_HERE';
+  var EVENTS = [
+    ['Intimate Ceremony', 'Intimate Ceremony'],
+    ['Reception', 'Reception'],
+    ['Both', 'Both']
+  ];
+  // Reception-only invite: the event question is skipped and this value is sent instead.
+  var FIXED_EVENT = (window.RSVP_CONFIG || {}).fixedEvent || '';
+
+  var state = { attending: '', seats: '', fullName: '', plusOneName: '', joiningFor: '', phone: '', vegetarian: '' };
+  var submissionId = newId();
+  var sending = false;
+
+  function newId() {
+    try { if (window.crypto && crypto.randomUUID) return crypto.randomUUID(); } catch (e) {}
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      var r = Math.random() * 16 | 0;
+      return (c === 'x' ? r : (r & 3 | 8)).toString(16);
+    });
+  }
+  function store(fn) { try { return fn(window.localStorage); } catch (e) { return null; } }
+  function saveDraft() { store(function (s) { s.setItem(DRAFT_KEY, JSON.stringify(state)); }); }
+  function clearDraft() { store(function (s) { s.removeItem(DRAFT_KEY); }); }
+  function loadDraft() {
+    var raw = store(function (s) { return s.getItem(DRAFT_KEY); });
+    if (!raw) return;
+    try {
+      var d = JSON.parse(raw);
+      Object.keys(state).forEach(function (k) { if (typeof d[k] === 'string') state[k] = d[k]; });
+    } catch (e) {}
+  }
+
+  function h(tag, attrs, kids) {
+    var el = document.createElement(tag);
+    Object.keys(attrs || {}).forEach(function (k) {
+      if (k === 'class') el.className = attrs[k];
+      else if (k === 'text') el.textContent = attrs[k];
+      else el.setAttribute(k, attrs[k]);
+    });
+    (kids || []).forEach(function (c) { if (c) el.appendChild(c); });
+    return el;
+  }
+
+  // ---------- build DOM ----------
+  var title = h('h2', { class: 'rsvp-title', id: 'rsvp-title', text: 'Quý khách có thể đến tham dự cùng chúng tôi được không?' });
+  var btnYes = h('button', { type: 'button', class: 'rsvp-pill', 'aria-pressed': 'false', text: 'Có' });
+  var btnNo = h('button', { type: 'button', class: 'rsvp-pill', 'aria-pressed': 'false', text: 'Không' });
+  var choice = h('div', { class: 'rsvp-choice', role: 'group', 'aria-labelledby': 'rsvp-title' }, [btnYes, btnNo]);
+
+  function errEl(id) { return h('p', { class: 'rsvp-error', id: id }); }
+  function collapse(content) {
+    return h('div', { class: 'rsvp-collapse' }, [h('div', { class: 'rsvp-inner' }, [content])]);
+  }
+
+  // seats
+  var seatBtns = ['1', '2'].map(function (n) {
+    return h('button', { type: 'button', class: 'rsvp-seat', role: 'radio', 'aria-checked': 'false', 'data-v': n, text: n });
+  });
+  var seatsErr = errEl('rsvp-seats-err');
+  var seatsGroup = h('div', { class: 'rsvp-seats', role: 'radiogroup', 'aria-labelledby': 'rsvp-seats-l', 'aria-describedby': 'rsvp-seats-err' }, seatBtns);
+  var seatsField = h('div', { class: 'rsvp-field' }, [
+    h('span', { class: 'rsvp-label', id: 'rsvp-seats-l', text: 'Số lượng khách tham dự' }),
+    seatsGroup, seatsErr]);
+  var seatsRow = collapse(seatsField);
+
+  // name
+  var nameIn = h('input', { type: 'text', class: 'rsvp-input', id: 'rsvp-name', name: 'name', autocomplete: 'name', 'aria-describedby': 'rsvp-name-err', maxlength: '200' });
+  var nameErr = errEl('rsvp-name-err');
+  var nameField = h('div', { class: 'rsvp-field' }, [
+    h('label', { class: 'rsvp-label', for: 'rsvp-name', text: 'Họ và Tên' }), nameIn, nameErr]);
+
+  // plus one
+  var plusIn = h('input', { type: 'text', class: 'rsvp-input', id: 'rsvp-plus', name: 'plus-one-name', autocomplete: 'off', 'aria-describedby': 'rsvp-plus-err', maxlength: '200' });
+  var plusErr = errEl('rsvp-plus-err');
+  var plusRow = collapse(h('div', { class: 'rsvp-field' }, [
+    h('label', { class: 'rsvp-label', for: 'rsvp-plus', text: 'Họ tên người đi cùng bạn?' }), plusIn, plusErr]));
+
+  // event
+  var radios = EVENTS.map(function (ev, i) {
+    var inp = h('input', { type: 'radio', name: 'joiningFor', value: ev[0], id: 'rsvp-ev-' + i });
+    return { input: inp, el: h('label', { class: 'rsvp-radio', for: 'rsvp-ev-' + i }, [inp, h('span', { text: ev[1] })]) };
+  });
+  var eventErr = errEl('rsvp-event-err');
+  var eventFieldset = h('fieldset', { class: 'rsvp-field', 'aria-describedby': 'rsvp-event-err' }, [
+    h('legend', { text: 'Bạn sẽ tham dự phần nào của buổi lễ?' }),
+    h('div', { class: 'rsvp-radios' }, radios.map(function (r) { return r.el; })), eventErr]);
+  var eventRow = collapse(eventFieldset);
+
+  // dietary
+  var phoneIn = h('input', { type: 'tel', class: 'rsvp-input', id: 'rsvp-phone', name: 'phone', autocomplete: 'tel', inputmode: 'numeric', pattern: '[0-9 ]*', maxlength: '20', 'aria-describedby': 'rsvp-phone-err' });
+  var phoneErr = errEl('rsvp-phone-err');
+  var phoneRow = collapse(h('div', { class: 'rsvp-field' }, [
+    h('label', { class: 'rsvp-label', for: 'rsvp-phone', text: 'Số điện thoại liên hệ' }), phoneIn, phoneErr]));
+
+  // note
+  var vegRadios = [['Có', 'Có'], ['Không', 'Không']].map(function (v, i) {
+    var inp = h('input', { type: 'radio', name: 'vegetarian', value: v[0], id: 'rsvp-veg-' + i });
+    return { input: inp, el: h('label', { class: 'rsvp-radio', for: 'rsvp-veg-' + i }, [inp, h('span', { text: v[1] })]) };
+  });
+  var vegRow = collapse(h('fieldset', { class: 'rsvp-field' }, [
+    h('legend', { text: 'Quý khách có nhu cầu ăn chay không?' }),
+    h('div', { class: 'rsvp-radios rsvp-radios-2' }, vegRadios.map(function (r) { return r.el; }))]));
+
+  // honeypot
+  var hpIn = h('input', { type: 'text', name: 'website', id: 'rsvp-website', tabindex: '-1', autocomplete: 'off' });
+  var hp = h('div', { class: 'rsvp-hp', 'aria-hidden': 'true' }, [h('label', { for: 'rsvp-website', text: 'Để trống ô này' }), hpIn]);
+
+  var nameWrap = h('div', { class: 'rsvp-collapse-static' }, [nameField]);
+  nameWrap.style.marginBottom = '22px';
+
+  var card = h('div', { class: 'rsvp-card', hidden: '' }, [seatsRow, nameWrap, plusRow, eventRow, phoneRow, vegRow, hp]);
+
+  var submitBtn = h('button', { type: 'submit', class: 'rsvp-submit', text: 'Xác nhận' });
+  var resetBtn = h('button', { type: 'button', class: 'rsvp-link', text: 'Làm lại' });
+  var status = h('p', { class: 'rsvp-status', role: 'status', 'aria-live': 'polite' });
+  var actions = h('div', { class: 'rsvp-actions', hidden: '' }, [submitBtn, h('br'), resetBtn, status]);
+
+  var form = h('form', { class: 'rsvp-form', novalidate: '', 'aria-labelledby': 'rsvp-title' }, [card, actions]);
+
+  var thanks = h('div', { class: 'rsvp-thanks', hidden: '', tabindex: '-1' });
+
+  root.textContent = '';
+  [title, choice, form, thanks].forEach(function (n) { root.appendChild(n); });
+
+  // ---------- rendering ----------
+  function setHidden(row, hidden) {
+    row.classList.toggle('is-hidden', hidden);
+    if (hidden) { row.setAttribute('inert', ''); row.setAttribute('aria-hidden', 'true'); }
+    else { row.removeAttribute('inert'); row.removeAttribute('aria-hidden'); }
+  }
+
+  function render() {
+    var yes = state.attending === 'Yes', no = state.attending === 'No';
+    btnYes.setAttribute('aria-pressed', yes);
+    btnNo.setAttribute('aria-pressed', no);
+    var picked = yes || no;
+    card.hidden = !picked; actions.hidden = !picked;
+    setHidden(seatsRow, !yes);
+    setHidden(eventRow, !yes || !!FIXED_EVENT);
+    setHidden(phoneRow, !yes);
+    setHidden(vegRow, !yes);
+    setHidden(plusRow, !(yes && state.seats === '2'));
+    seatBtns.forEach(function (b) { b.setAttribute('aria-checked', b.getAttribute('data-v') === state.seats); b.tabIndex = (state.seats ? b.getAttribute('data-v') === state.seats : b.getAttribute('data-v') === '1') ? 0 : -1; });
+    radios.forEach(function (r) { r.input.checked = r.input.value === state.joiningFor; });
+    nameIn.value = state.fullName; plusIn.value = state.plusOneName;
+    phoneIn.value = state.phone;
+    vegRadios.forEach(function (r) { r.input.checked = r.input.value === state.vegetarian; });
+  }
+
+  function setErr(input, errNode, msg) {
+    errNode.textContent = msg || '';
+    if (input) { if (msg) input.setAttribute('aria-invalid', 'true'); else input.removeAttribute('aria-invalid'); }
+  }
+  // Phone: digits only (spaces allowed as separators), 8-15 digits.
+  function phoneDigitsOk(v) { var d = String(v || '').replace(/\s+/g, ''); return /^[0-9]{8,15}$/.test(d); }
+  function clearErrors() {
+    setErr(phoneIn, phoneErr);
+    setErr(nameIn, nameErr); setErr(plusIn, plusErr); setErr(null, seatsErr); setErr(null, eventErr);
+    status.textContent = ''; status.classList.remove('is-error');
+  }
+
+  // ---------- events ----------
+  function setStatus(msg, isErr) { status.textContent = msg; status.classList.toggle('is-error', !!isErr); }
+
+  function choose(v) { state.attending = v; clearErrors(); render(); saveDraft(); }
+  btnYes.addEventListener('click', function () { choose('Yes'); });
+  btnNo.addEventListener('click', function () { choose('No'); });
+
+  seatBtns.forEach(function (b, i) {
+    b.addEventListener('click', function () {
+      state.seats = b.getAttribute('data-v'); setErr(null, seatsErr); render(); saveDraft();
+    });
+    b.addEventListener('keydown', function (e) {
+      var d = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0;
+      if (!d) return;
+      e.preventDefault();
+      var t = seatBtns[(i + d + seatBtns.length) % seatBtns.length];
+      t.focus(); t.click();
+    });
+  });
+  radios.forEach(function (r) {
+    r.input.addEventListener('change', function () { state.joiningFor = r.input.value; setErr(null, eventErr); saveDraft(); });
+  });
+  nameIn.addEventListener('input', function () { state.fullName = nameIn.value; if (nameIn.value.trim()) setErr(nameIn, nameErr); saveDraft(); });
+  plusIn.addEventListener('input', function () { state.plusOneName = plusIn.value; if (plusIn.value.trim()) setErr(plusIn, plusErr); saveDraft(); });
+  phoneIn.addEventListener('input', function () {
+    var clean = phoneIn.value.replace(/[^0-9 ]/g, '');
+    if (clean !== phoneIn.value) phoneIn.value = clean;
+    state.phone = clean;
+    if (phoneDigitsOk(clean)) setErr(phoneIn, phoneErr);
+    saveDraft();
+  });
+  vegRadios.forEach(function (r) {
+    r.input.addEventListener('change', function () { state.vegetarian = r.input.value; saveDraft(); });
+  });
+
+  resetBtn.addEventListener('click', function () {
+    if (sending) return;
+    resetAll();
+  });
+  function resetAll() {
+    Object.keys(state).forEach(function (k) { state[k] = ''; });
+    hpIn.value = ''; submissionId = newId();
+    clearDraft(); clearErrors(); render();
+    thanks.hidden = true; form.hidden = false; choice.hidden = false; title.hidden = false;
+  }
+
+  // ---------- validation ----------
+  function validate() {
+    clearErrors();
+    var yes = state.attending === 'Yes';
+    var first = null;
+    function bad(el, node, msg, input) { setErr(input, node, msg); if (!first) first = el; }
+    if (yes && !state.seats) bad(seatBtns[0], seatsErr, 'Vui lòng chọn số chỗ cần giữ.', null);
+    if (!state.fullName.trim()) bad(nameIn, nameErr, 'Cho chúng mình biết tên bạn nhé.', nameIn);
+    if (yes && state.seats === '2' && !state.plusOneName.trim()) bad(plusIn, plusErr, 'Vui lòng nhập họ tên người đi cùng.', plusIn);
+    if (yes && state.phone.trim() && !phoneDigitsOk(state.phone)) bad(phoneIn, phoneErr, 'Số điện thoại chỉ gồm chữ số (8–15 số).', phoneIn);
+    if (yes && !FIXED_EVENT && !state.joiningFor) bad(radios[0].input, eventErr, 'Vui lòng chọn phần bạn sẽ tham dự.', null);
+    if (first) first.focus();
+    return !first;
+  }
+
+  // ---------- submit ----------
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (sending || !state.attending) return;
+    if (!validate()) return;
+    var cfg = window.RSVP_CONFIG || {};
+    var endpoint = cfg.endpoint;
+    if (!endpoint || endpoint.indexOf(PLACEHOLDER) !== -1) {
+      console.warn('[RSVP] config.js still has the placeholder endpoint. Deploy the Apps Script (see apps-script/SETUP.md) and paste its /exec URL into site/config.js.');
+      setStatus('Xin lỗi, biểu mẫu chưa được kết nối. Vui lòng thử lại sau hoặc liên hệ trực tiếp với chúng mình.', true);
+      return;
+    }
+    var yes = state.attending === 'Yes';
+    var payload = {
+      attending: state.attending,
+      seats: yes ? Number(state.seats) : '',
+      fullName: state.fullName.trim(),
+      plusOneName: yes && state.seats === '2' ? state.plusOneName.trim() : '',
+      joiningFor: yes ? (FIXED_EVENT || state.joiningFor) : '',
+      phone: yes ? state.phone.trim() : '',
+      vegetarian: yes ? state.vegetarian : '',
+      // The current Apps Script only knows the original columns, so also write the
+      // new answers into them: Dietary <- vegetarian, Note <- phone number.
+      dietary: yes && state.vegetarian ? 'Ăn chay: ' + state.vegetarian : '',
+      note: yes && state.phone.trim() ? 'SĐT: ' + state.phone.trim() : '',
+      submissionId: submissionId,
+      website: hpIn.value
+    };
+    sending = true;
+    submitBtn.disabled = true; submitBtn.textContent = 'Đang gửi…';
+    resetBtn.disabled = true;
+    setStatus('Đang gửi phản hồi của bạn…', false);
+
+    var ctrl = window.AbortController ? new AbortController() : null;
+    var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 25000);
+    fetch(endpoint, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      signal: ctrl ? ctrl.signal : undefined
+    }).then(function (r) { return r.json(); }).then(function (j) {
+      if (!j || j.ok !== true) throw new Error((j && j.error) || 'Unexpected response');
+      success(payload);
+    }).catch(function (err) {
+      console.error('[RSVP] submit failed', err);
+      setStatus('Ôi, có lỗi khi gửi phản hồi. Câu trả lời của bạn vẫn còn đây, vui lòng thử lại sau giây lát nhé.', true);
+    }).then(function () {
+      clearTimeout(timer);
+      sending = false; submitBtn.disabled = false; submitBtn.textContent = 'Xác nhận'; resetBtn.disabled = false;
+    });
+  });
+
+  function success(p) {
+    clearDraft();
+    var yes = p.attending === 'Yes';
+    var who = p.fullName;
+    thanks.textContent = '';
+    thanks.appendChild(h('h3', { text: yes ? 'Hẹn gặp bạn tại tiệc!' : 'Chúng mình sẽ nhớ bạn lắm!' }));
+    thanks.appendChild(h('p', { text: yes
+      ? 'Cảm ơn ' + who + '. Chúng mình đã giữ ' + p.seats + ' chỗ cho bạn và rất vui vì bạn sẽ đến chung vui.'
+      : 'Cảm ơn ' + who + ' đã báo cho chúng mình. Mong sớm được gặp và chung vui cùng bạn.' }));
+    thanks.appendChild(h('p', { text: 'Thương mến, Minh & Mindy' }));
+    var again = h('button', { type: 'button', class: 'rsvp-link', text: 'Gửi một phản hồi khác' });
+    again.addEventListener('click', function () { resetAll(); title.scrollIntoView({ block: 'center' }); });
+    thanks.appendChild(again);
+    form.hidden = true; choice.hidden = true; title.hidden = true; thanks.hidden = false;
+    thanks.focus();
+  }
+
+  loadDraft();
+  render();
+})();

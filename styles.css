@@ -1,0 +1,176 @@
+/* Minh & Mindy wedding invitation. Design source: Figma "Mindy Wed" / prototype flow "Main" (440 x 956 frames).
+   Layout: a 440-unit design column; 1 unit = --u = min(100vw, 440px) / 440. */
+:root {
+  /* palette (sampled from the Figma design) */
+  --ink: #000000;          /* all body/heading text in the design */
+  --paper: #ffffff;        /* page background (frame fill) */
+  --pink: #fcd5db;         /* "RSVP" / "Open in Maps" button fill */
+  --pink-deep: #b54a5c;    /* crest shield red, used for accents/focus */
+  --blush: #ffefef;        /* Q&A card fill */
+  --butter: #fff8de;       /* Q&A card (yellow) */
+  --sky: #ddeeff;          /* travel Q&A card fill */
+  --line: #1f1f1f;         /* 1px outlines on buttons/cards */
+  --slate: #2f3d4a;        /* "Be Our Guest" chalkboard */
+  --curtain: #f7eeb7;      /* curtain yellow */
+  --backdrop: #1e1e1e;     /* outside the design column on wide screens */
+  /* type */
+  --font-script: 'Playfair Display', 'Times New Roman', serif;  /* Instrument Serif has no Vietnamese glyphs; Playfair italic is the closest match that does */
+  --font-serif: 'Crimson Text', Georgia, serif;                 /* body copy */
+  /* scale */
+  --col: min(100vw, 440px);
+  --u: calc(var(--col) / 440);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; background: var(--backdrop); }
+html.is-opening, html.is-opening body { overflow: hidden; height: 100%; }
+body {
+  margin: 0;
+  background: var(--backdrop);
+  color: var(--ink);
+  font-family: var(--font-serif);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+img { display: block; max-width: none; }
+
+.col {
+  position: relative;
+  width: var(--col);
+  margin: 0 auto;
+  background: var(--paper);
+  overflow: hidden;            /* artwork overflows the 440 frame horizontally, like the Figma frame */
+  overflow: clip;
+  padding-bottom: env(safe-area-inset-bottom);
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.sr-only {
+  position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ---------- absolutely positioned art sections ---------- */
+.art { position: relative; width: 100%; }
+.art .shift { position: absolute; left: 0; width: 100%; height: 0; }
+.art .bg { position: absolute; left: 0; width: 100%; user-select: none; -webkit-user-drag: none; pointer-events: none; }
+.sprite { position: absolute; pointer-events: none; user-select: none; will-change: transform; }
+.t { position: absolute; margin: 0; font-weight: 400; }
+.t.pre { white-space: pre-line; }
+.c { text-align: center; }
+
+/* type styles (Figma: Crimson Text / Instrument Serif, "auto" line height = 1.28) */
+.h-script { font-family: var(--font-script); font-style: italic; font-size: calc(48 * var(--u)); line-height: calc(62 * var(--u)); letter-spacing: 0; }
+.body { font-family: var(--font-serif); font-size: calc(18 * var(--u)); line-height: calc(23 * var(--u)); }
+.small-i { font-style: italic; font-size: calc(15 * var(--u)); line-height: calc(17 * var(--u)); }
+.small-bi { font-style: italic; font-weight: 600; font-size: calc(15 * var(--u)); line-height: calc(19 * var(--u)); }
+.venue { font-family: var(--font-script); font-style: italic; font-size: calc(18 * var(--u)); line-height: calc(23 * var(--u)); }
+.venue-l { font-family: var(--font-script); font-style: italic; font-size: calc(23 * var(--u)); line-height: calc(31 * var(--u)); }
+.item { font-size: calc(24 * var(--u)); line-height: calc(31 * var(--u)); }
+.item .title { font-style: italic; font-weight: 600; }
+.loc { font-size: calc(18 * var(--u)); line-height: calc(24 * var(--u)); }
+.loc .loc-b { font-weight: 600; }
+.loc .loc-i { font-style: italic; font-size: calc(20 * var(--u)); }
+
+/* ---------- hero + opening ---------- */
+.hero { z-index: 2; }
+.hero .curtain { position: absolute; z-index: 5; pointer-events: none; }
+.hero .curtain img { width: 100%; height: 100%; }
+.opening-only { display: none; }
+html.is-opening .opening-only { display: block; }
+.hero .ribbon { position: absolute; z-index: 6; pointer-events: none; }
+.hero .ribbon img, .hero .crest-wrap img { width: 100%; height: 100%; }
+.hero .crest-wrap { position: absolute; z-index: 7; pointer-events: none; }
+.hero .tap {
+  position: absolute; z-index: 8; display: none; border: 0; padding: 0; margin: 0; cursor: pointer;
+  background: radial-gradient(closest-side, rgba(255,255,255,.95) 35%, rgba(255,255,255,.75) 60%, rgba(255,255,255,0));
+  font-family: var(--font-script); font-size: calc(24 * var(--u)); color: var(--ink);
+  -webkit-tap-highlight-color: transparent;
+}
+html.is-opening .hero .tap { display: flex; align-items: center; justify-content: center; }
+.hero .tap:focus { outline: none; }
+.hero .tap:focus-visible { outline: 2px solid var(--pink-deep); outline-offset: -6px; border-radius: 40px; }
+/* tap catcher: the whole closed-curtain screen starts the show */
+html.is-opening .hero::after { content: ""; position: absolute; inset: 0; z-index: 7; }
+
+/* closed state (frame 3030:101): curtains meet in the middle */
+html.is-opening .curtain-left { transform: translateX(calc(241 * var(--u))); }
+html.is-opening .curtain-right { transform: translateX(calc(-230 * var(--u))); }
+
+/* step 1, ON_CLICK -> 3032:175, SMART_ANIMATE 1.2s ease-in-out: ribbon drops away, crest + "Tap to Start" fade */
+.curtain, .ribbon, .crest-wrap, .tap { transition-timing-function: cubic-bezier(0.42, 0, 0.58, 1); }
+html.is-opening.step-1 .ribbon { transform: translateY(calc(589 * var(--u))); transition: transform 1.2s cubic-bezier(0.42, 0, 0.58, 1); }
+html.is-opening.step-1 .crest-wrap,
+html.is-opening.step-1 .tap { opacity: 0; transition: opacity 1.2s cubic-bezier(0.42, 0, 0.58, 1); pointer-events: none; }
+/* step 2, AFTER_TIMEOUT 0.3s -> 3032:241, SMART_ANIMATE 2s ease-in-out: curtains part */
+html.is-opening.step-2 .curtain-left,
+html.is-opening.step-2 .curtain-right { transform: none; transition: transform 2s cubic-bezier(0.42, 0, 0.58, 1); }
+
+/* ---------- buttons / links ---------- */
+.btn-pink {
+  position: absolute; display: flex; align-items: center; justify-content: center;
+  background: var(--pink); border: 1px solid var(--line); border-radius: calc(8 * var(--u));
+  font-family: var(--font-script); font-size: calc(24 * var(--u)); color: var(--ink); text-decoration: none;
+  min-height: 44px;
+}
+.btn-pink:active { transform: translateY(1px); }
+.btn-pink:focus-visible, .map:focus-visible { outline: 3px solid var(--pink-deep); outline-offset: 2px; }
+
+/* map: "MAP" component 3352:568, AFTER_TIMEOUT smart-animate chain played once on scroll-in.
+   Default (paper rolled to a strip) -> 2s paper unrolls -> 0.8s colour art -> 0.8s steps 5 -> 0.8s steps 4 -> 0.8s steps 6+7 */
+.map { position: absolute; display: block; }
+.map img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; user-select: none; -webkit-user-drag: none; }
+html.js .map:not(.play) .map-paper { clip-path: inset(0 0 97.6% 0); }
+html.js .map:not(.play) .map-art { opacity: 0; transform: scale(.911); }
+html.js .map:not(.play) .map-step { opacity: 0; }
+.map.play .map-paper { transition: clip-path 2s cubic-bezier(0.42, 0, 0.58, 1); }
+.map.play .map-art { transition: opacity .8s cubic-bezier(0.42, 0, 0.58, 1) 2s, transform .8s cubic-bezier(0.42, 0, 0.58, 1) 2s; }
+.map.play .map-step-5 { transition: opacity .8s cubic-bezier(0.42, 0, 0.58, 1) 2.8s; }
+.map.play .map-step-4 { transition: opacity .8s cubic-bezier(0.42, 0, 0.58, 1) 3.6s; }
+.map.play .map-step-6, .map.play .map-step-7 { transition: opacity .8s cubic-bezier(0.42, 0, 0.58, 1) 4.4s; }
+.qa-link { color: inherit; font-style: italic; font-weight: 600; }
+
+/* ---------- RSVP ---------- */
+#rsvp-art { position: relative; width: 100%; }
+#rsvp-form-root { position: relative; z-index: 1; padding-top: calc(8 * var(--u)); padding-bottom: calc(24 * var(--u)); }
+
+/* ---------- Q&A (flow layout, Figma frame "q&a" 379 wide at x=31) ---------- */
+.flow { position: relative; padding: calc(100 * var(--u)) calc(31 * var(--u)) calc(70 * var(--u)); }
+.flow > .h-script { position: static; margin: 0; }
+.flow .body { margin: calc(8 * var(--u)) 0 0; }
+.flow .pre { white-space: pre-line; }
+.qa-sub { padding: 0 calc(24 * var(--u)); }
+.qa-list { display: flex; flex-direction: column; gap: calc(20 * var(--u)); margin-top: calc(36 * var(--u)); }
+.travel-h { margin-top: calc(100 * var(--u)) !important; }
+.travel-h + .qa-sub { padding: 0; }
+.qa-item { border: 1px solid var(--line); border-radius: calc(8 * var(--u)); background: var(--blush); overflow: hidden; }
+.qa-yellow { background: var(--butter); }
+.qa-blue { background: var(--sky); }
+.qa-item h3 { margin: 0; font: inherit; }
+.qa-q {
+  display: flex; width: 100%; align-items: flex-start; justify-content: space-between; gap: calc(4 * var(--u));
+  padding: calc(10 * var(--u)) calc(17 * var(--u)) calc(10 * var(--u)) calc(18 * var(--u)); min-height: max(44px, calc(51 * var(--u)));
+  background: none; border: 0; margin: 0; cursor: pointer; text-align: left; color: var(--ink);
+  font-family: var(--font-serif); font-size: calc(24 * var(--u)); line-height: calc(31 * var(--u));
+  -webkit-tap-highlight-color: transparent;
+}
+.qa-q:focus-visible { outline: 2px solid var(--pink-deep); outline-offset: -4px; border-radius: calc(8 * var(--u)); }
+.chev { flex: none; width: calc(20 * var(--u)); height: calc(10 * var(--u)); margin-top: calc(10 * var(--u)); fill: none; stroke: var(--ink); stroke-width: 1.6; transition: transform .3s cubic-bezier(0.42, 0, 0.58, 1); }
+.qa-q[aria-expanded="true"] .chev { transform: rotate(180deg); }
+.qa-a { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .3s cubic-bezier(0.42, 0, 0.58, 1); }
+.qa-a > div { overflow: hidden; min-height: 0; }
+.qa-a p {
+  margin: 0 calc(18 * var(--u)); padding: calc(12 * var(--u)) 0 calc(16 * var(--u));
+  border-top: 1px solid var(--line);
+  font-size: calc(18 * var(--u)); line-height: calc(23 * var(--u));
+}
+.qa-q[aria-expanded="true"] + .qa-a, .qa-item.open .qa-a { grid-template-rows: 1fr; }
+.bear { width: calc(379 * var(--u)); height: auto; margin: calc(40 * var(--u)) auto 0; }
+
+/* ---------- motion preferences ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .sprite, [class*="anim-"] { animation: none !important; }
+  .chev, .qa-a, .map img { transition: none !important; }
+}
+.paused { animation-play-state: paused !important; }

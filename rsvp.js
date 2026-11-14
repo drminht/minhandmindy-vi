@@ -4,7 +4,7 @@
   var root = document.getElementById('rsvp-form-root');
   if (!root) return;
 
-  var DRAFT_KEY = 'rsvp-draft-vi-v3';
+  var DRAFT_KEY = 'rsvp-draft-vi-v5';
   var PLACEHOLDER = 'PASTE_APPS_SCRIPT_URL_HERE';
   var EVENTS = [
     ['Intimate Ceremony', 'Intimate Ceremony'],
@@ -14,7 +14,7 @@
   // Reception-only invite: the event question is skipped and this value is sent instead.
   var FIXED_EVENT = (window.RSVP_CONFIG || {}).fixedEvent || '';
 
-  var state = { attending: '', seats: '', fullName: '', plusOneName: '', joiningFor: '', vegetarian: '' };
+  var state = { attending: '', fullName: '', joiningFor: '', vegetarian: '' };
   var submissionId = newId();
   var sending = false;
 
@@ -59,28 +59,11 @@
     return h('div', { class: 'rsvp-collapse' }, [h('div', { class: 'rsvp-inner' }, [content])]);
   }
 
-  // seats
-  var seatBtns = ['1', '2'].map(function (n) {
-    return h('button', { type: 'button', class: 'rsvp-seat', role: 'radio', 'aria-checked': 'false', 'data-v': n, text: n });
-  });
-  var seatsErr = errEl('rsvp-seats-err');
-  var seatsGroup = h('div', { class: 'rsvp-seats', role: 'radiogroup', 'aria-labelledby': 'rsvp-seats-l', 'aria-describedby': 'rsvp-seats-err' }, seatBtns);
-  var seatsField = h('div', { class: 'rsvp-field' }, [
-    h('span', { class: 'rsvp-label', id: 'rsvp-seats-l', text: 'Số lượng khách tham dự' }),
-    seatsGroup, seatsErr]);
-  var seatsRow = collapse(seatsField);
-
   // name
   var nameIn = h('input', { type: 'text', class: 'rsvp-input', id: 'rsvp-name', name: 'name', autocomplete: 'name', 'aria-describedby': 'rsvp-name-err', maxlength: '200' });
   var nameErr = errEl('rsvp-name-err');
   var nameField = h('div', { class: 'rsvp-field' }, [
     h('label', { class: 'rsvp-label', for: 'rsvp-name', text: 'Họ và Tên' }), nameIn, nameErr]);
-
-  // plus one
-  var plusIn = h('input', { type: 'text', class: 'rsvp-input', id: 'rsvp-plus', name: 'plus-one-name', autocomplete: 'off', 'aria-describedby': 'rsvp-plus-err', maxlength: '200' });
-  var plusErr = errEl('rsvp-plus-err');
-  var plusRow = collapse(h('div', { class: 'rsvp-field' }, [
-    h('label', { class: 'rsvp-label', for: 'rsvp-plus', text: 'Họ tên người đi cùng bạn?' }), plusIn, plusErr]));
 
   // event
   var radios = EVENTS.map(function (ev, i) {
@@ -111,7 +94,7 @@
   var nameWrap = h('div', { class: 'rsvp-collapse-static' }, [nameField]);
   nameWrap.style.marginBottom = '22px';
 
-  var card = h('div', { class: 'rsvp-card', hidden: '' }, [seatsRow, nameWrap, plusRow, eventRow, vegRow, hp]);
+  var card = h('div', { class: 'rsvp-card', hidden: '' }, [nameWrap, eventRow, vegRow, hp]);
 
   var submitBtn = h('button', { type: 'submit', class: 'rsvp-submit', text: 'Xác nhận' });
   var resetBtn = h('button', { type: 'button', class: 'rsvp-link', text: 'Làm lại' });
@@ -138,13 +121,10 @@
     btnNo.setAttribute('aria-pressed', no);
     var picked = yes || no;
     card.hidden = !picked; actions.hidden = !picked;
-    setHidden(seatsRow, !yes);
     setHidden(eventRow, !yes || !!FIXED_EVENT);
     setHidden(vegRow, !yes);
-    setHidden(plusRow, !(yes && state.seats === '2'));
-    seatBtns.forEach(function (b) { b.setAttribute('aria-checked', b.getAttribute('data-v') === state.seats); b.tabIndex = (state.seats ? b.getAttribute('data-v') === state.seats : b.getAttribute('data-v') === '1') ? 0 : -1; });
     radios.forEach(function (r) { r.input.checked = r.input.value === state.joiningFor; });
-    nameIn.value = state.fullName; plusIn.value = state.plusOneName;
+    nameIn.value = state.fullName;
     vegRadios.forEach(function (r) { r.input.checked = r.input.value === state.vegetarian; });
   }
 
@@ -153,7 +133,7 @@
     if (input) { if (msg) input.setAttribute('aria-invalid', 'true'); else input.removeAttribute('aria-invalid'); }
   }
   function clearErrors() {
-    setErr(nameIn, nameErr); setErr(plusIn, plusErr); setErr(null, seatsErr); setErr(null, eventErr);
+    setErr(nameIn, nameErr); setErr(null, eventErr);
     status.textContent = ''; status.classList.remove('is-error');
   }
 
@@ -164,23 +144,10 @@
   btnYes.addEventListener('click', function () { choose('Yes'); });
   btnNo.addEventListener('click', function () { choose('No'); });
 
-  seatBtns.forEach(function (b, i) {
-    b.addEventListener('click', function () {
-      state.seats = b.getAttribute('data-v'); setErr(null, seatsErr); render(); saveDraft();
-    });
-    b.addEventListener('keydown', function (e) {
-      var d = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0;
-      if (!d) return;
-      e.preventDefault();
-      var t = seatBtns[(i + d + seatBtns.length) % seatBtns.length];
-      t.focus(); t.click();
-    });
-  });
   radios.forEach(function (r) {
     r.input.addEventListener('change', function () { state.joiningFor = r.input.value; setErr(null, eventErr); saveDraft(); });
   });
   nameIn.addEventListener('input', function () { state.fullName = nameIn.value; if (nameIn.value.trim()) setErr(nameIn, nameErr); saveDraft(); });
-  plusIn.addEventListener('input', function () { state.plusOneName = plusIn.value; if (plusIn.value.trim()) setErr(plusIn, plusErr); saveDraft(); });
   vegRadios.forEach(function (r) {
     r.input.addEventListener('change', function () { state.vegetarian = r.input.value; saveDraft(); });
   });
@@ -202,9 +169,7 @@
     var yes = state.attending === 'Yes';
     var first = null;
     function bad(el, node, msg, input) { setErr(input, node, msg); if (!first) first = el; }
-    if (yes && !state.seats) bad(seatBtns[0], seatsErr, 'Vui lòng chọn số chỗ cần giữ.', null);
     if (!state.fullName.trim()) bad(nameIn, nameErr, 'Cho chúng mình biết tên bạn nhé.', nameIn);
-    if (yes && state.seats === '2' && !state.plusOneName.trim()) bad(plusIn, plusErr, 'Vui lòng nhập họ tên người đi cùng.', plusIn);
     if (yes && !FIXED_EVENT && !state.joiningFor) bad(radios[0].input, eventErr, 'Vui lòng chọn phần bạn sẽ tham dự.', null);
     if (first) first.focus();
     return !first;
@@ -225,9 +190,7 @@
     var yes = state.attending === 'Yes';
     var payload = {
       attending: state.attending,
-      seats: yes ? Number(state.seats) : '',
       fullName: state.fullName.trim(),
-      plusOneName: yes && state.seats === '2' ? state.plusOneName.trim() : '',
       joiningFor: yes ? (FIXED_EVENT || state.joiningFor) : '',
       vegetarian: yes ? state.vegetarian : '',
       submissionId: submissionId,

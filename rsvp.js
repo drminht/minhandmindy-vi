@@ -50,7 +50,7 @@
   }
 
   // ---------- build DOM ----------
-  var title = h('h2', { class: 'rsvp-title', id: 'rsvp-title', text: 'Để gia đình chuẩn bị chu đáo cho việc đón tiếp, xin Quý Khách vui lòng xác nhận tham dự trước ngày 5/12:' });
+  var title = h('h2', { class: 'rsvp-title', id: 'rsvp-title', text: 'Để gia đình chuẩn bị chu đáo cho việc đón tiếp, xin Quý Khách vui lòng xác nhận tham dự:' });
   var btnYes = h('button', { type: 'button', class: 'rsvp-pill', 'aria-pressed': 'false', text: 'CÓ' });
   var btnNo = h('button', { type: 'button', class: 'rsvp-pill', 'aria-pressed': 'false', text: 'KHÔNG' });
   var choice = h('div', { class: 'rsvp-choice', role: 'group', 'aria-labelledby': 'rsvp-title' }, [btnYes, btnNo]);

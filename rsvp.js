@@ -14,7 +14,7 @@
   // Reception-only invite: the event question is skipped and this value is sent instead.
   var FIXED_EVENT = (window.RSVP_CONFIG || {}).fixedEvent || '';
 
-  var state = { attending: '', fullName: '', joiningFor: '', vegetarian: '' };
+  var state = { attending: '', fullName: '', group: '', joiningFor: '', vegetarian: '' };
   var submissionId = newId();
   var sending = false;
 
@@ -50,9 +50,9 @@
   }
 
   // ---------- build DOM ----------
-  var title = h('h2', { class: 'rsvp-title', id: 'rsvp-title', text: 'Để việc đón tiếp được chu đáo, Quý Khách vui lòng xác nhận tham dự trước ngày 5/12' });
-  var btnYes = h('button', { type: 'button', class: 'rsvp-pill', 'aria-pressed': 'false', text: 'Có' });
-  var btnNo = h('button', { type: 'button', class: 'rsvp-pill', 'aria-pressed': 'false', text: 'Không' });
+  var title = h('h2', { class: 'rsvp-title', id: 'rsvp-title', text: 'Để gia đình chuẩn bị chu đáo cho việc đón tiếp, xin Quý Khách vui lòng xác nhận tham dự trước ngày 5/12:' });
+  var btnYes = h('button', { type: 'button', class: 'rsvp-pill', 'aria-pressed': 'false', text: 'CÓ' });
+  var btnNo = h('button', { type: 'button', class: 'rsvp-pill', 'aria-pressed': 'false', text: 'KHÔNG' });
   var choice = h('div', { class: 'rsvp-choice', role: 'group', 'aria-labelledby': 'rsvp-title' }, [btnYes, btnNo]);
 
   function errEl(id) { return h('p', { class: 'rsvp-error', id: id }); }
@@ -65,6 +65,11 @@
   var nameErr = errEl('rsvp-name-err');
   var nameField = h('div', { class: 'rsvp-field' }, [
     h('label', { class: 'rsvp-label', for: 'rsvp-name', text: 'Họ và Tên' }), nameIn, nameErr]);
+
+  // group (attending guests only, optional)
+  var groupIn = h('input', { type: 'text', class: 'rsvp-input', id: 'rsvp-group', name: 'group', autocomplete: 'off', maxlength: '200' });
+  var groupRow = collapse(h('div', { class: 'rsvp-field' }, [
+    h('label', { class: 'rsvp-label', for: 'rsvp-group', text: 'Quý Khách vui lòng cho biết mình thuộc nhóm nào (vd: Đồng nghiệp + tên công ty, Bạn ĐH, Bạn phổ thông + tên trường...)' }), groupIn]));
 
   // event
   var radios = EVENTS.map(function (ev, i) {
@@ -95,7 +100,7 @@
   var nameWrap = h('div', { class: 'rsvp-collapse-static' }, [nameField]);
   nameWrap.style.marginBottom = '22px';
 
-  var card = h('div', { class: 'rsvp-card', hidden: '' }, [nameWrap, eventRow, vegRow, hp]);
+  var card = h('div', { class: 'rsvp-card', hidden: '' }, [nameWrap, groupRow, eventRow, vegRow, hp]);
 
   var submitBtn = h('button', { type: 'submit', class: 'rsvp-submit', text: 'Xác nhận' });
   var resetBtn = h('button', { type: 'button', class: 'rsvp-link', text: 'Làm lại' });
@@ -124,8 +129,9 @@
     card.hidden = !picked; actions.hidden = !picked;
     setHidden(eventRow, !yes || !!FIXED_EVENT);
     setHidden(vegRow, !yes);
+    setHidden(groupRow, !yes);
     radios.forEach(function (r) { r.input.checked = r.input.value === state.joiningFor; });
-    nameIn.value = state.fullName;
+    nameIn.value = state.fullName; groupIn.value = state.group;
     vegRadios.forEach(function (r) { r.input.checked = r.input.value === state.vegetarian; });
   }
 
@@ -149,6 +155,7 @@
     r.input.addEventListener('change', function () { state.joiningFor = r.input.value; setErr(null, eventErr); saveDraft(); });
   });
   nameIn.addEventListener('input', function () { state.fullName = nameIn.value; if (nameIn.value.trim()) setErr(nameIn, nameErr); saveDraft(); });
+  groupIn.addEventListener('input', function () { state.group = groupIn.value; saveDraft(); });
   vegRadios.forEach(function (r) {
     r.input.addEventListener('change', function () { state.vegetarian = r.input.value; saveDraft(); });
   });
@@ -192,6 +199,7 @@
     var payload = {
       attending: state.attending,
       fullName: state.fullName.trim(),
+      group: yes ? state.group.trim() : '',
       joiningFor: yes ? (FIXED_EVENT || state.joiningFor) : '',
       vegetarian: yes ? state.vegetarian : '',
       submissionId: submissionId,

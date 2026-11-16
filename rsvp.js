@@ -13,6 +13,9 @@
   ];
   // Reception-only invite: the event question is skipped and this value is sent instead.
   var FIXED_EVENT = (window.RSVP_CONFIG || {}).fixedEvent || '';
+  // Guest list from the link, e.g. ?list=bame -> the Apps Script writes to that list's tab.
+  var LIST = '';
+  try { LIST = ((/[?&]list=([^&#]*)/.exec(location.search) || [])[1] || '').toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 30); } catch (e) {}
 
   var state = { attending: '', fullName: '', group: '', joiningFor: '', vegetarian: '' };
   var submissionId = newId();
@@ -203,6 +206,7 @@
       joiningFor: yes ? (FIXED_EVENT || state.joiningFor) : '',
       vegetarian: yes ? state.vegetarian : '',
       submissionId: submissionId,
+      list: LIST,
       website: hpIn.value
     };
     sending = true;
